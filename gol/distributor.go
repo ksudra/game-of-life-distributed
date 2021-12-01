@@ -32,7 +32,12 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	server := "127.0.0.1:8030"
 	client, _ := rpc.Dial("tcp", server)
 
-	defer client.Close()
+	defer func(client *rpc.Client) {
+		err := client.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(client)
 
 	go getAliveCells(ticker, c, client)
 	go control(keyPresses, p, c, client)
