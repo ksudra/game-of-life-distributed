@@ -29,9 +29,6 @@ func (g *GameOfLife) GOL(request stubs.GameReq, response *stubs.GameRes) (err er
 	}
 	for i := 0; i < request.Turns; i++ {
 		for pause {
-			//if !pause {
-			//	break
-			//}
 		}
 		aliveCount = len(calculateAliveCells(tempWorld))
 		turn = i

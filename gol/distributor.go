@@ -3,6 +3,7 @@ package gol
 import (
 	"fmt"
 	"net/rpc"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -29,7 +30,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	// TODO: Create a 2D slice to store the world.
 
 	turn := 0
-	server := "127.0.0.1:8030"
+	server := "54.205.75.196:8030"
 	client, _ := rpc.Dial("tcp", server)
 
 	defer func(client *rpc.Client) {
@@ -140,7 +141,8 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 				sendWorld(p, c, response.World, response.Turn)
 			case 'q':
 				changeState(0, client, Quitting, c)
-				return
+				time.Sleep(200 * time.Millisecond)
+				os.Exit(0)
 			case 'p':
 				changeState(1, client, Paused, c)
 				pause = true
@@ -152,14 +154,16 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 				}
 				for {
 					keyPress = <-keyChan
-					fmt.Println("Continuing")
-					changeState(2, client, Executing, c)
-					err = client.Call(stubs.PauseGame, request, response)
-					if err != nil {
-						fmt.Println(err)
+					if keyPress == 'p' {
+						fmt.Println("Continuing")
+						changeState(2, client, Executing, c)
+						err = client.Call(stubs.PauseGame, request, response)
+						if err != nil {
+							fmt.Println(err)
+						}
+						pause = false
+						break
 					}
-					pause = false
-					break
 				}
 			case 'k':
 				request := stubs.BoardReq{}
