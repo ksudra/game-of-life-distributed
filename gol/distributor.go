@@ -152,9 +152,6 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 				}
 				for {
 					keyPress = <-keyChan
-					for keyPress != 'p' {
-						keyPress = <-keyChan
-					}
 					fmt.Println("Continuing")
 					changeState(2, client, Executing, c)
 					err = client.Call(stubs.PauseGame, request, response)
