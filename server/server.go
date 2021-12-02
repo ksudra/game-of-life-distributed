@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/rpc"
 	"os"
-	"sync"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
@@ -47,31 +46,23 @@ func (g *GameOfLife) GOL(request stubs.GameReq, response *stubs.GameRes) (err er
 }
 
 func calculateNextState(width int, height int, threads int, world [][]uint8) [][]uint8 {
-	tempWorld := make([][]byte, len(world))
+	tempWorld := make([][]uint8, len(world))
 	for i := range world {
-		tempWorld[i] = make([]byte, len(world[i]))
+		tempWorld[i] = make([]uint8, len(world[i]))
 		copy(tempWorld[i], world[i])
 	}
 
-	var wg sync.WaitGroup
-	var remainder sync.WaitGroup
+	for y := range tempWorld {
+		for x := range tempWorld {
+			count := countNeighbours(width, height, x, y, world)
 
-	for i := 0; i < threads; i++ {
-		start := i * (height - height%threads) / threads
-		end := start + (height-height%threads)/threads
-		wg.Add(1)
-		go worker(&wg, start, end, width, height, tempWorld, world)
-
+			if world[y][x] == 255 && (count < 2 || count > 3) {
+				tempWorld[y][x] = 0
+			} else if world[y][x] == 0 && count == 3 {
+				tempWorld[y][x] = 255
+			}
+		}
 	}
-	wg.Wait()
-
-	if height%threads > 0 {
-		start := height - height%threads
-		remainder.Add(1)
-		go worker(&remainder, start, height, width, height, tempWorld, world)
-	}
-
-	remainder.Wait()
 
 	return tempWorld
 }
@@ -109,22 +100,6 @@ func calculateAliveCells(world [][]uint8) []util.Cell {
 		}
 	}
 	return cells
-}
-
-func worker(wg *sync.WaitGroup, start, end, width, height int, newWorld [][]byte, world [][]byte) {
-	defer wg.Done()
-
-	for y := start; y < end; y++ {
-		for x := range newWorld {
-			count := countNeighbours(width, height, x, y, world)
-
-			if world[y][x] == 255 && (count < 2 || count > 3) {
-				newWorld[y][x] = 0
-			} else if world[y][x] == 0 && count == 3 {
-				newWorld[y][x] = 255
-			}
-		}
-	}
 }
 
 func (g *GameOfLife) GetNumAlive(request stubs.AliveReq, response *stubs.AliveRes) (err error) {

@@ -59,6 +59,9 @@ type PauseReq struct{}
 type PauseRes struct {
 	Turn int
 }
+type QuitReq struct{}
+
+type QuitRes struct{}
 
 type CloseReq struct{}
 
