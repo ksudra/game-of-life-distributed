@@ -30,7 +30,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	// TODO: Create a 2D slice to store the world.
 
 	turn := 0
-	server := "54.205.75.196:8030"
+	server := "54.162.205.169:8030"
 	client, _ := rpc.Dial("tcp", server)
 
 	defer func(client *rpc.Client) {
@@ -41,7 +41,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	}(client)
 
 	go getAliveCells(ticker, c, client)
-	go control(keyPresses, p, c, client)
+	//go control(keyPresses, p, c, client)
 	makeCall(client, p, c, world, turn)
 	ticker.Stop()
 
