@@ -10,6 +10,8 @@ var ChangeState = "GameOfLife.StateChange"
 var GetBoard = "GameOfLife.GetBoard"
 var ShutDown = "GameOfLife.ShutDown"
 var PauseGame = "GameOfLife.PauseGame"
+var QuitGame = "GameOfLife.QuitGame"
+var CheckQuit = "GameOfLife.CheckQuit"
 
 type GameReq struct {
 	Width   int
@@ -62,6 +64,12 @@ type PauseRes struct {
 type QuitReq struct{}
 
 type QuitRes struct{}
+
+type CheckQuitReq struct{}
+
+type CheckQuitRes struct {
+	Quit bool
+}
 
 type CloseReq struct{}
 

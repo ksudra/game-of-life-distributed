@@ -20,6 +20,7 @@ var state int
 var board [][]uint8
 var shut bool
 var pause bool
+var quit bool
 
 func (g *GameOfLife) GOL(request stubs.GameReq, response *stubs.GameRes) (err error) {
 	tempWorld := make([][]uint8, len(request.World))
@@ -132,6 +133,15 @@ func (g *GameOfLife) PauseGame(request stubs.PauseReq, response *stubs.PauseRes)
 		pause = true
 	}
 	response.Turn = turn
+	return
+}
+
+func (g *GameOfLife) QuitGame(request stubs.QuitReq, response *stubs.QuitRes) (err error) {
+	quit = true
+	return
+}
+func (g *GameOfLife) CheckQuit(request stubs.CheckQuitReq, response *stubs.CheckQuitRes) (err error) {
+	response.Quit = quit
 	return
 }
 

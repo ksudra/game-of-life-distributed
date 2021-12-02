@@ -42,7 +42,9 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	go getAliveCells(ticker, c, client)
 	go control(keyPresses, p, c, client)
-	makeCall(client, p, c, world, turn)
+	if hasQuit(client) != true {
+		makeCall(client, p, c, world, turn)
+	}
 	ticker.Stop()
 
 	// TODO: Execute all turns of the Game of Life.
@@ -126,8 +128,14 @@ func changeState(state int, client *rpc.Client, newState State, c distributorCha
 	}
 }
 
-func hasQuit() {
-
+func hasQuit(client *rpc.Client) bool {
+	request := stubs.CheckQuitReq{}
+	response := new(stubs.CheckQuitRes)
+	err := client.Call(stubs.CheckQuit, request, response)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return response.Quit
 }
 
 func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.Client) {
@@ -145,6 +153,12 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 				sendWorld(p, c, response.World, response.Turn)
 			case 'q':
 				changeState(0, client, Quitting, c)
+				request := stubs.QuitReq{}
+				response := new(stubs.QuitRes)
+				err := client.Call(stubs.CheckQuit, request, response)
+				if err != nil {
+					fmt.Println(err)
+				}
 				time.Sleep(200 * time.Millisecond)
 				os.Exit(0)
 				return
