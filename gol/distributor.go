@@ -22,6 +22,7 @@ type distributorChannels struct {
 type GameOfLife struct{}
 
 var pause bool
+var finished bool
 
 // distributor divides the work between workers and interacts with other goroutines.
 func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
@@ -30,7 +31,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	// TODO: Create a 2D slice to store the world.
 
 	turn := 0
-	server := "54.172.42.80:8030"
+	server := "127.0.0.1:8030"
 	client, _ := rpc.Dial("tcp", server)
 
 	defer func(client *rpc.Client) {
@@ -44,6 +45,19 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	go control(keyPresses, p, c, client)
 	if hasQuit(client) != true {
 		makeCall(client, p, c, world, turn)
+	} else {
+		accessGol(ticker, client)
+		request := stubs.BoardReq{}
+		response := new(stubs.BoardRes)
+		err := client.Call(stubs.GetBoard, request, response)
+		if err != nil {
+			fmt.Println(err)
+		}
+		sendWorld(p, c, response.World, response.Turn)
+		c.events <- FinalTurnComplete{
+			CompletedTurns: response.Turn,
+			Alive:          response.Alive,
+		}
 	}
 	ticker.Stop()
 
@@ -88,7 +102,6 @@ func sendWorld(p Params, c distributorChannels, world [][]uint8, turn int) {
 
 func getAliveCells(ticker *time.Ticker, c distributorChannels, client *rpc.Client) {
 	for {
-
 		select {
 		case <-ticker.C:
 			for pause {
@@ -108,7 +121,6 @@ func getAliveCells(ticker *time.Ticker, c distributorChannels, client *rpc.Clien
 			}
 
 		}
-
 	}
 }
 
@@ -199,6 +211,8 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 				if err != nil {
 					fmt.Println(err)
 				}
+				time.Sleep(200 * time.Millisecond)
+				os.Exit(0)
 				return
 			}
 		default:
@@ -206,6 +220,24 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 		}
 	}
 
+}
+
+func accessGol(ticker *time.Ticker, client *rpc.Client) {
+	for {
+		select {
+		case <-ticker.C:
+			request := stubs.FinishedReq{}
+			response := new(stubs.FinishedRes)
+			err := client.Call(stubs.CheckFinished, request, response)
+			if err != nil {
+				fmt.Println(err)
+			}
+			if response.Finished {
+				ticker.Stop()
+				break
+			}
+		}
+	}
 }
 
 func makeCall(client *rpc.Client, p Params, c distributorChannels, world [][]uint8, completedTurns int) {

@@ -21,6 +21,7 @@ var board [][]uint8
 var shut bool
 var pause bool
 var quit bool
+var finished bool
 
 func (g *GameOfLife) GOL(request stubs.GameReq, response *stubs.GameRes) (err error) {
 	tempWorld := make([][]uint8, len(request.World))
@@ -40,9 +41,11 @@ func (g *GameOfLife) GOL(request stubs.GameReq, response *stubs.GameRes) (err er
 			os.Exit(0)
 		}
 	}
-	response.World = tempWorld
+	board = tempWorld
+	response.World = board
 	response.CompletedTurns = request.Turns
-	response.Alive = calculateAliveCells(tempWorld)
+	response.Alive = calculateAliveCells(board)
+	finished = true
 	return
 }
 
@@ -117,6 +120,7 @@ func (g *GameOfLife) StateChange(request stubs.ChangeStateReq, response *stubs.C
 
 func (g *GameOfLife) GetBoard(request stubs.BoardReq, response *stubs.BoardRes) (err error) {
 	response.Turn = turn
+	response.Alive = calculateAliveCells(board)
 	response.World = board
 	return
 }
@@ -142,6 +146,11 @@ func (g *GameOfLife) QuitGame(request stubs.QuitReq, response *stubs.QuitRes) (e
 }
 func (g *GameOfLife) CheckQuit(request stubs.CheckQuitReq, response *stubs.CheckQuitRes) (err error) {
 	response.Quit = quit
+	return
+}
+
+func (g *GameOfLife) CheckFinished(request stubs.FinishedReq, response *stubs.FinishedRes) (err error) {
+	response.Finished = finished
 	return
 }
 

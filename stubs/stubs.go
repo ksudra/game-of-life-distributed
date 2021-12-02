@@ -12,6 +12,7 @@ var ShutDown = "GameOfLife.ShutDown"
 var PauseGame = "GameOfLife.PauseGame"
 var QuitGame = "GameOfLife.QuitGame"
 var CheckQuit = "GameOfLife.CheckQuit"
+var CheckFinished = "GameOfLife.CheckFinished"
 
 type GameReq struct {
 	Width   int
@@ -31,6 +32,7 @@ type BoardReq struct{}
 
 type BoardRes struct {
 	Turn  int
+	Alive []util.Cell
 	World [][]uint8
 }
 
@@ -49,13 +51,6 @@ type AliveRes struct {
 	Alive int
 }
 
-type CellReq struct{}
-
-type CellRes struct {
-	Turn int
-	Cell util.Cell
-}
-
 type PauseReq struct{}
 
 type PauseRes struct {
@@ -69,6 +64,12 @@ type CheckQuitReq struct{}
 
 type CheckQuitRes struct {
 	Quit bool
+}
+
+type FinishedReq struct{}
+
+type FinishedRes struct {
+	Finished bool
 }
 
 type CloseReq struct{}
