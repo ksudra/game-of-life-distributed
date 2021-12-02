@@ -155,7 +155,7 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 				changeState(0, client, Quitting, c)
 				request := stubs.QuitReq{}
 				response := new(stubs.QuitRes)
-				err := client.Call(stubs.CheckQuit, request, response)
+				err := client.Call(stubs.QuitGame, request, response)
 				if err != nil {
 					fmt.Println(err)
 				}
