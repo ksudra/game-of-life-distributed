@@ -22,7 +22,6 @@ type distributorChannels struct {
 type GameOfLife struct{}
 
 var pause bool
-var finished bool
 
 // distributor divides the work between workers and interacts with other goroutines.
 func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
@@ -31,7 +30,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	// TODO: Create a 2D slice to store the world.
 
 	turn := 0
-	server := "127.0.0.1:8030"
+	server := "3.89.120.18:8030"
 	client, _ := rpc.Dial("tcp", server)
 
 	defer func(client *rpc.Client) {
@@ -44,7 +43,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	go getAliveCells(ticker, c, client)
 	go control(keyPresses, p, c, client)
 	if hasQuit(client) != true {
-		makeCall(client, p, c, world, turn)
+		runGame(client, p, c, world, turn)
 	} else {
 		accessGol(ticker, client)
 		request := stubs.BoardReq{}
@@ -69,7 +68,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	c.ioCommand <- ioCheckIdle
 	<-c.ioIdle
 
-	changeState(0, client, Quitting, c)
+	changeState(client, Quitting, c)
 
 	// Close the channel to stop the SDL goroutine gracefully. Removing may cause deadlock.
 	close(c.events)
@@ -124,10 +123,8 @@ func getAliveCells(ticker *time.Ticker, c distributorChannels, client *rpc.Clien
 	}
 }
 
-func changeState(state int, client *rpc.Client, newState State, c distributorChannels) {
-	request := stubs.ChangeStateReq{
-		State: state,
-	}
+func changeState(client *rpc.Client, newState State, c distributorChannels) {
+	request := stubs.ChangeStateReq{}
 	response := new(stubs.ChangeStateRes)
 	err := client.Call(stubs.ChangeState, request, response)
 	if err != nil {
@@ -150,10 +147,10 @@ func hasQuit(client *rpc.Client) bool {
 	return response.Quit
 }
 
-func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.Client) {
+func control(key <-chan rune, p Params, c distributorChannels, client *rpc.Client) {
 	for {
 		select {
-		case keyPress := <-keyChan:
+		case keyPress := <-key:
 			switch keyPress {
 			case 's':
 				request := stubs.BoardReq{}
@@ -164,7 +161,7 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 				}
 				sendWorld(p, c, response.World, response.Turn)
 			case 'q':
-				changeState(0, client, Quitting, c)
+				changeState(client, Quitting, c)
 				request := stubs.QuitReq{}
 				response := new(stubs.QuitRes)
 				err := client.Call(stubs.QuitGame, request, response)
@@ -175,7 +172,7 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 				os.Exit(0)
 				return
 			case 'p':
-				changeState(1, client, Paused, c)
+				changeState(client, Paused, c)
 				pause = true
 				request := stubs.PauseReq{}
 				response := new(stubs.PauseRes)
@@ -184,10 +181,10 @@ func control(keyChan <-chan rune, p Params, c distributorChannels, client *rpc.C
 					fmt.Println(err)
 				}
 				for {
-					keyPress = <-keyChan
+					keyPress = <-key
 					if keyPress == 'p' {
 						fmt.Println("Continuing")
-						changeState(2, client, Executing, c)
+						changeState(client, Executing, c)
 						err = client.Call(stubs.PauseGame, request, response)
 						if err != nil {
 							fmt.Println(err)
@@ -233,20 +230,18 @@ func accessGol(ticker *time.Ticker, client *rpc.Client) {
 				fmt.Println(err)
 			}
 			if response.Finished {
-				ticker.Stop()
 				break
 			}
 		}
 	}
 }
 
-func makeCall(client *rpc.Client, p Params, c distributorChannels, world [][]uint8, completedTurns int) {
+func runGame(client *rpc.Client, p Params, c distributorChannels, world [][]uint8, completedTurns int) {
 	request := stubs.GameReq{
-		Width:   p.ImageWidth,
-		Height:  p.ImageHeight,
-		Threads: p.Threads,
-		Turns:   p.Turns,
-		World:   world,
+		Width:  p.ImageWidth,
+		Height: p.ImageHeight,
+		Turns:  p.Turns,
+		World:  world,
 	}
 
 	response := new(stubs.GameRes)

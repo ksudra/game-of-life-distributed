@@ -15,11 +15,10 @@ var CheckQuit = "GameOfLife.CheckQuit"
 var CheckFinished = "GameOfLife.CheckFinished"
 
 type GameReq struct {
-	Width   int
-	Height  int
-	Threads int
-	Turns   int
-	World   [][]uint8
+	Width  int
+	Height int
+	Turns  int
+	World  [][]uint8
 }
 
 type GameRes struct {

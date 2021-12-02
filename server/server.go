@@ -16,7 +16,6 @@ type GameOfLife struct{}
 
 var aliveCount int
 var turn int
-var state int
 var board [][]uint8
 var shut bool
 var pause bool
@@ -35,7 +34,7 @@ func (g *GameOfLife) GOL(request stubs.GameReq, response *stubs.GameRes) (err er
 		aliveCount = len(calculateAliveCells(tempWorld))
 		turn = i
 		board = tempWorld
-		tempWorld = calculateNextState(request.Width, request.Height, request.Threads, tempWorld)
+		tempWorld = calculateNextState(request.Width, request.Height, tempWorld)
 		if shut {
 			time.Sleep(200 * time.Millisecond)
 			os.Exit(0)
@@ -49,7 +48,7 @@ func (g *GameOfLife) GOL(request stubs.GameReq, response *stubs.GameRes) (err er
 	return
 }
 
-func calculateNextState(width int, height int, threads int, world [][]uint8) [][]uint8 {
+func calculateNextState(width, height int, world [][]uint8) [][]uint8 {
 	tempWorld := make([][]uint8, len(world))
 	for i := range world {
 		tempWorld[i] = make([]uint8, len(world[i]))
@@ -71,7 +70,7 @@ func calculateNextState(width int, height int, threads int, world [][]uint8) [][
 	return tempWorld
 }
 
-func countNeighbours(width int, height int, x int, y int, world [][]uint8) int {
+func countNeighbours(width, height, x, y int, world [][]uint8) int {
 	neighbours := [8][2]int{
 		{-1, -1},
 		{-1, 0},
@@ -113,7 +112,6 @@ func (g *GameOfLife) GetNumAlive(request stubs.AliveReq, response *stubs.AliveRe
 }
 
 func (g *GameOfLife) StateChange(request stubs.ChangeStateReq, response *stubs.ChangeStateRes) (err error) {
-	state = request.State
 	response.Turn = turn
 	return
 }
