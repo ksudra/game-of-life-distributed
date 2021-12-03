@@ -30,7 +30,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	// TODO: Create a 2D slice to store the world.
 
 	turn := 0
-	server := "3.89.120.18:8030"
+	server := "127.0.0.1:8030"
 	client, _ := rpc.Dial("tcp", server)
 
 	defer func(client *rpc.Client) {
